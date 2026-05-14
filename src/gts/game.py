@@ -24,17 +24,12 @@ from .scenes import (
 from .ui import HUD, SaveMenu
 
 
-def _round_rotate(image: pygame.Surface, angle: float) -> pygame.Surface:
-    """Rotate `image` and crop the result back to the original rect.
-
-    Mirrors the legacy `Movement.round_rotation` helper so the original
-    blit offsets remain valid regardless of rotation angle.
-    """
-    orig_rect = image.get_rect()
-    rotated = pygame.transform.rotate(image, angle)
-    cropped = orig_rect.copy()
-    cropped.center = rotated.get_rect().center
-    return rotated.subsurface(cropped).copy()
+def _sprite_pivot(
+    center: tuple[float, float], sprite: pygame.Surface, top_left_offset: tuple[int, int]
+) -> tuple[float, float]:
+    """Center point a sprite would occupy if blitted at `center + offset`."""
+    w, h = sprite.get_size()
+    return (center[0] + top_left_offset[0] + w / 2, center[1] + top_left_offset[1] + h / 2)
 
 
 PLAYER_FOOT_SIZE = (40, 30)
@@ -245,14 +240,17 @@ class Game:
         angle: float,
         facing: str,
     ) -> None:
-        head = _round_rotate(self.head_image, angle)
-        wpn = _round_rotate(weapon_sprite, angle)
+        head_pivot = _sprite_pivot(center, self.head_image, HEAD_BLIT_OFFSET)
+        wpn_pivot = _sprite_pivot(center, weapon_sprite, WEAPON_BLIT_OFFSET)
+
+        head = pygame.transform.rotate(self.head_image, angle)
+        wpn = pygame.transform.rotate(weapon_sprite, angle)
         if facing == "left":
             head = pygame.transform.flip(head, False, True)
             wpn = pygame.transform.flip(wpn, False, True)
-        cx, cy = center
-        self.screen.blit(wpn, (cx + WEAPON_BLIT_OFFSET[0], cy + WEAPON_BLIT_OFFSET[1]))
-        self.screen.blit(head, (cx + HEAD_BLIT_OFFSET[0], cy + HEAD_BLIT_OFFSET[1]))
+
+        self.screen.blit(wpn, wpn.get_rect(center=wpn_pivot))
+        self.screen.blit(head, head.get_rect(center=head_pivot))
 
     def _snapshot(self) -> SaveRecord:
         slots: list[str] = []
