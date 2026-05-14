@@ -14,7 +14,9 @@ from gts.assets import AssetLoader  # noqa: E402
 def _pygame_display():
     pygame.display.init()
     pygame.display.set_mode((1, 1))
+    pygame.font.init()
     yield
+    pygame.font.quit()
     pygame.display.quit()
 
 
