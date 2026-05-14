@@ -11,7 +11,7 @@ from .aim import aim_angle_facing
 from .assets import AssetLoader
 from .entities import Player
 from .input import facing_from_input, movement_delta
-from .inventory import Glock, Inventory, Punch
+from .inventory import Blade, Glock, Inventory, Punch
 from .persistence import SaveFile, SaveRecord
 from .scenes import (
     BankScene,
@@ -75,6 +75,7 @@ class Game:
         self.inventory = Inventory(config.INVENTORY_SLOTS)
         self.inventory.put(0, Punch(self.loader, frame_hold=frame_hold))
         self.inventory.put(1, Glock(self.loader))
+        self.inventory.put(2, Blade(self.loader, frame_hold=frame_hold))
 
         self.font = pygame.font.SysFont("Arial", 24)
         self.hud = HUD(self.font)
@@ -140,21 +141,32 @@ class Game:
             facing = aim_facing
 
         scene = self.scenes.current
-        dx, dy = movement_delta(up=up, down=down, left=left, right=right, speed=speed)
+        weapon = self.inventory.active
+        dash_dx, dash_dy = weapon.dash_delta() if weapon is not None else (0.0, 0.0)
+        dashing = dash_dx != 0.0 or dash_dy != 0.0
+        if dashing:
+            # dash_delta is the player's intended motion; the world translates opposite.
+            dx, dy = -dash_dx, -dash_dy
+            moving = False
+            if dash_dx > 0:
+                facing = "right"
+            elif dash_dx < 0:
+                facing = "left"
+        else:
+            dx, dy = movement_delta(up=up, down=down, left=left, right=right, speed=speed)
         if dx or dy:
             scene.translate(dx, dy)
             if scene.name == "world":
                 foot = self._player_foot_rect(screen_size)
                 blocking = self._first_blocking_prop(scene, foot)
                 if blocking is not None:
-                    if e_pressed and blocking.target_scene is not None:
+                    if e_pressed and blocking.target_scene is not None and not dashing:
                         self.scenes.switch_to(blocking.target_scene)
                         e_pressed = False
                     else:
                         scene.translate(-dx, -dy)
                         moving = False
 
-        weapon = self.inventory.active
         if weapon is not None:
             weapon.update()
 
@@ -162,35 +174,48 @@ class Game:
         active_scene.draw_background(self.screen)
         active_scene.draw_props(self.screen)
 
-        sprite = self.player.update(moving=moving, sprint=sprint, facing=facing)
+        weapon_in_hand = weapon is not None and (self.player.aiming or not weapon.requires_aim)
+        sprite = self.player.update(
+            moving=moving, sprint=sprint, facing=facing, show_weapon=weapon_in_hand
+        )
         self.screen.blit(
             sprite,
             (center[0] - sprite.get_width() / 2, center[1] - sprite.get_height() / 2),
         )
-        if self.player.aiming and weapon is not None:
-            self._draw_aim(center, weapon.aim_sprite(), aim_angle, facing)
+        if weapon_in_hand:
+            overlay_angle = aim_angle if self.player.aiming else 0.0
+            self._draw_aim(center, weapon.aim_sprite(), overlay_angle, self.player.facing)
 
         self._draw_hud(screen_size)
 
     def _on_mouse_down(self, event: pygame.event.Event, screen_size: tuple[int, int]) -> None:
+        if event.button not in (1, 3):
+            return
+
+        if event.button == 1:
+            overlay_size = self.save_list_image.get_size()
+            on_save_button = HUD.save_button_rect(screen_size).collidepoint(event.pos)
+            if on_save_button and not self.save_menu.is_open:
+                self.savefile.append(self._snapshot())
+            if on_save_button or self.save_menu.is_open:
+                self.save_menu.handle_click(event.pos, screen_size, overlay_size)
+                return
+
+        weapon = self.inventory.active
+        if weapon is not None and not weapon.requires_aim:
+            if event.button == 1:
+                weapon.fire("primary")
+            else:
+                sw, sh = screen_size
+                direction = (event.pos[0] - sw / 2, event.pos[1] - sh / 2)
+                weapon.fire("secondary", direction=direction)
+            return
+
         if event.button == 3:
             self.player.toggle_aim()
             return
-        if event.button != 1:
-            return
-
-        overlay_size = self.save_list_image.get_size()
-        on_save_button = HUD.save_button_rect(screen_size).collidepoint(event.pos)
-
-        if on_save_button and not self.save_menu.is_open:
-            self.savefile.append(self._snapshot())
-
-        if on_save_button or self.save_menu.is_open:
-            self.save_menu.handle_click(event.pos, screen_size, overlay_size)
-            return
-
-        if self.player.aiming and self.inventory.active is not None:
-            self.inventory.active.fire()
+        if self.player.aiming and weapon is not None:
+            weapon.fire()
 
     def _draw_hud(self, screen_size: tuple[int, int]) -> None:
         self.screen.blit(self.toolbar_image, HUD.toolbar_pos(screen_size))

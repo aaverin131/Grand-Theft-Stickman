@@ -47,29 +47,40 @@ class Player:
         self._dance_tick = 0
 
     # --- per-tick update ------------------------------------------------------
-    def update(self, *, moving: bool, sprint: bool, facing: Facing | None = None) -> pygame.Surface:
+    def update(
+        self,
+        *,
+        moving: bool,
+        sprint: bool,
+        facing: Facing | None = None,
+        show_weapon: bool | None = None,
+    ) -> pygame.Surface:
         """Advance animation state by one tick and return the sprite to blit.
 
         `facing` is set when the player moves horizontally; vertical-only motion
-        preserves the previous facing.
+        preserves the previous facing. `show_weapon` selects the headless body
+        sprite that the weapon-overlay composes onto; defaults to the aim flag
+        for callers that don't track it explicitly.
         """
         if facing is not None:
             self.facing = facing
+        if show_weapon is None:
+            show_weapon = self.aiming
 
         if self.dancing:
             return self._advance_dance()
-        return self._advance_run(moving=moving, sprint=sprint)
+        return self._advance_run(moving=moving, sprint=sprint, show_weapon=show_weapon)
 
-    def _advance_run(self, *, moving: bool, sprint: bool) -> pygame.Surface:
+    def _advance_run(self, *, moving: bool, sprint: bool, show_weapon: bool) -> pygame.Surface:
         if not moving:
-            sprite = self._weapon_still if self.aiming else self._normal_still
+            sprite = self._weapon_still if show_weapon else self._normal_still
         else:
             hold = max(1, self._frame_hold // 2) if sprint else self._frame_hold
             self._run_tick += 1
             if self._run_tick >= hold:
                 self._run_tick = 0
                 self._run_frame = (self._run_frame + 1) % RUN_FRAME_COUNT
-            frames = self._weapon_run if self.aiming else self._normal_run
+            frames = self._weapon_run if show_weapon else self._normal_run
             sprite = frames[self._run_frame]
 
         if self.facing == "left":

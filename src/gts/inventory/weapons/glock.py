@@ -18,7 +18,11 @@ class Glock(Weapon):
         self._flash = loader.image("stickman/weapon/glock/glockfire.png")
         self._flash_left = 0
 
-    def fire(self) -> None:
+    def fire(
+        self,
+        mode: str = "primary",
+        direction: tuple[float, float] | None = None,
+    ) -> None:
         self._flash_left = self.FLASH_TICKS
 
     def update(self) -> None:
