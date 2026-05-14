@@ -1,0 +1,2 @@
+pygame>=2.5
+pyautogui>=0.9
