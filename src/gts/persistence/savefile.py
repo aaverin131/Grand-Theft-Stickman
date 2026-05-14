@@ -77,7 +77,15 @@ class SaveFile:
         return [SaveRecord.from_row(r) for r in data_rows if r]
 
     def append(self, record: SaveRecord) -> None:
-        write_header = not self.path.exists() or self.path.stat().st_size == 0
+        size = self.path.stat().st_size if self.path.exists() else 0
+        write_header = size == 0
+        if size:
+            with self.path.open("rb") as fh:
+                fh.seek(-1, 2)
+                last = fh.read(1)
+            if last not in (b"\n", b"\r"):
+                with self.path.open("ab") as fh:
+                    fh.write(b"\r\n")
         with self.path.open("a", newline="") as fh:
             writer = csv.writer(fh)
             if write_header:

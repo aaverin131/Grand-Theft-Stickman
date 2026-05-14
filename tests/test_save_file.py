@@ -64,3 +64,20 @@ def test_timestamp_preserved(tmp_path):
 def test_read_all_handles_missing_file(tmp_path):
     sf = SaveFile(tmp_path / "missing.csv")
     assert sf.read_all() == []
+
+
+def test_append_recovers_when_existing_file_lacks_trailing_newline(tmp_path):
+    from gts.persistence.savefile import HEADER
+
+    path = tmp_path / "saves.csv"
+    # Write header + one row with no trailing newline — the failure mode that
+    # caused the merged 27-column row in production.
+    path.write_text(
+        ",".join(HEADER)
+        + "\nstickman.png,1,2,3,4,a,b,c,d,e,f,g,world,2024-01-01 12:00 PM"
+    )
+    sf = SaveFile(path)
+    sf.append(_make_record("after"))
+    records = sf.read_all()
+    assert len(records) == 2
+    assert records[1].timestamp == "after"
