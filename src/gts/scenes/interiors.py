@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from .scene import Prop, Scene
-from ..assets import AssetLoader
 from .. import config
+from ..assets import AssetLoader
+from .scene import Prop, Scene
 
 
 def _single_backdrop(loader: AssetLoader, image_path: str) -> list[Prop]:

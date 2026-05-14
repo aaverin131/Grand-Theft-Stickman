@@ -6,9 +6,8 @@ from typing import Literal
 
 import pygame
 
-from ..assets import AssetLoader
 from .. import config
-
+from ..assets import AssetLoader
 
 Facing = Literal["left", "right"]
 

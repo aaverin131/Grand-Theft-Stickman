@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from .base import AnimatedSwingWeapon
+from ... import config
 from ...animation import FrameSequence
 from ...assets import AssetLoader
-from ... import config
+from .base import AnimatedSwingWeapon
 
 
 class Blade(AnimatedSwingWeapon):

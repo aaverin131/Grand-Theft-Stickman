@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pygame
 
-from .base import Weapon
 from ...assets import AssetLoader
+from .base import Weapon
 
 
 class Glock(Weapon):

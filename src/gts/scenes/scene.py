@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import pygame
 
@@ -22,7 +21,7 @@ class Prop:
     image: pygame.Surface
     pos: list[float]
     collidable: bool = False
-    target_scene: Optional[str] = None
+    target_scene: str | None = None
 
 
 class Scene:

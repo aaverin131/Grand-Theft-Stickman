@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pygame
 
-
 _NUM_SUFFIX = re.compile(r"(\d+)$")
 
 

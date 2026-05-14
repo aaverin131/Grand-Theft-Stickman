@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from .scene import Prop, Scene
-from ..assets import AssetLoader
 from .. import config
-
+from ..assets import AssetLoader
+from .scene import Prop, Scene
 
 # Drawn in order, behind the buildings.
 SCENERY = [

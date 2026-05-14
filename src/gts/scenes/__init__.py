@@ -1,7 +1,7 @@
-from .scene import Prop, Scene
+from .interiors import BankScene, BasementScene, GunshopScene, HouseScene
 from .manager import SceneManager
+from .scene import Prop, Scene
 from .world import WorldScene
-from .interiors import BankScene, GunshopScene, HouseScene, BasementScene
 
 __all__ = [
     "Prop",
