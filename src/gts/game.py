@@ -178,13 +178,20 @@ class Game:
         sprite = self.player.update(
             moving=moving, sprint=sprint, facing=facing, show_weapon=weapon_in_hand
         )
-        self.screen.blit(
-            sprite,
-            (center[0] - sprite.get_width() / 2, center[1] - sprite.get_height() / 2),
-        )
+        if self._should_draw_body(weapon):
+            self.screen.blit(
+                sprite,
+                (center[0] - sprite.get_width() / 2, center[1] - sprite.get_height() / 2),
+            )
         if weapon_in_hand:
             overlay_angle = aim_angle if self.player.aiming else 0.0
-            self._draw_aim(center, weapon.aim_sprite(), overlay_angle, self.player.facing)
+            self._draw_aim(
+                center,
+                weapon.aim_sprite(),
+                overlay_angle,
+                self.player.facing,
+                aim_mode=self.player.aiming,
+            )
 
         self._draw_hud(screen_size)
 
@@ -264,6 +271,8 @@ class Game:
         weapon_sprite: pygame.Surface,
         angle: float,
         facing: str,
+        *,
+        aim_mode: bool = True,
     ) -> None:
         head_pivot = _sprite_pivot(center, self.head_image, HEAD_BLIT_OFFSET)
         wpn_pivot = _sprite_pivot(center, weapon_sprite, WEAPON_BLIT_OFFSET)
@@ -271,11 +280,23 @@ class Game:
         head = pygame.transform.rotate(self.head_image, angle)
         wpn = pygame.transform.rotate(weapon_sprite, angle)
         if facing == "left":
-            head = pygame.transform.flip(head, False, True)
-            wpn = pygame.transform.flip(wpn, False, True)
+            # Aim mode pairs a negated angle with a vertical flip so the
+            # rotation-and-flip composition points the sprite correctly across
+            # the full circle. Without rotation we just want a mirror image.
+            if aim_mode:
+                head = pygame.transform.flip(head, False, True)
+                wpn = pygame.transform.flip(wpn, False, True)
+            else:
+                head = pygame.transform.flip(head, True, False)
+                wpn = pygame.transform.flip(wpn, True, False)
 
         self.screen.blit(wpn, wpn.get_rect(center=wpn_pivot))
         self.screen.blit(head, head.get_rect(center=head_pivot))
+
+    def _should_draw_body(self, weapon) -> bool:
+        if weapon is None:
+            return True
+        return not (weapon.animation_includes_body and weapon.is_animating())
 
     def _snapshot(self) -> SaveRecord:
         slots: list[str] = []

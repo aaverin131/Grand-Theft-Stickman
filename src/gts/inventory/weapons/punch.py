@@ -7,6 +7,8 @@ from .base import AnimatedSwingWeapon
 
 
 class Punch(AnimatedSwingWeapon):
+    animation_includes_body = True
+
     def __init__(self, loader: AssetLoader, frame_hold: int = config.ANIMATION_FRAME_HOLD):
         sprite = loader.image("stickman/weapon/punch/punchstill.png")
         super().__init__(

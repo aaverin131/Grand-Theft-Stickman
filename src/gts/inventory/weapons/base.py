@@ -19,6 +19,10 @@ class Weapon(ABC):
     # Weapons that need aim mode are fired only while the player is aiming;
     # weapons that don't (e.g. melee) receive both mouse buttons directly.
     requires_aim: bool = True
+    # Set on weapons whose animation frames already contain the stickman body
+    # (e.g. melee swings): the orchestrator must skip the body blit while
+    # the animation is in flight to avoid double-rendering.
+    animation_includes_body: bool = False
 
     @abstractmethod
     def fire(
@@ -45,6 +49,10 @@ class Weapon(ABC):
     def dash_delta(self) -> tuple[float, float]:
         """World translation to apply this tick. Zero unless dashing."""
         return (0.0, 0.0)
+
+    def is_animating(self) -> bool:
+        """True while a use animation is in flight."""
+        return False
 
 
 class AnimatedSwingWeapon(Weapon):
@@ -82,6 +90,9 @@ class AnimatedSwingWeapon(Weapon):
     @property
     def active_mode(self) -> str | None:
         return self._active_mode
+
+    def is_animating(self) -> bool:
+        return self._active_mode is not None
 
     def fire(
         self,

@@ -8,7 +8,8 @@ from .base import AnimatedSwingWeapon
 
 class Blade(AnimatedSwingWeapon):
     requires_aim = False
-    DASH_DISTANCE = 320.0
+    animation_includes_body = True
+    DASH_DISTANCE = 200.0
     # The dash plays much faster than a normal swing so the burst feels snappy.
     DASH_FRAME_HOLD_DIVISOR = 5
 

@@ -53,6 +53,33 @@ def test_blade_does_not_require_aim(loader):
     assert Blade(loader, frame_hold=1).requires_aim is False
 
 
+def test_melee_weapons_mark_animation_includes_body(loader):
+    assert Punch(loader, frame_hold=1).animation_includes_body is True
+    assert Blade(loader, frame_hold=1).animation_includes_body is True
+
+
+def test_glock_animation_does_not_include_body(loader):
+    assert Glock(loader).animation_includes_body is False
+
+
+def test_is_animating_reflects_active_mode(loader):
+    blade = Blade(loader, frame_hold=1)
+    assert blade.is_animating() is False
+    blade.fire("primary")
+    assert blade.is_animating() is True
+    for _ in range(256):
+        blade.update()
+        if not blade.is_animating():
+            break
+    assert blade.is_animating() is False
+
+
+def test_glock_is_not_animating(loader):
+    glock = Glock(loader)
+    glock.fire()
+    assert glock.is_animating() is False
+
+
 def test_blade_primary_completes_and_returns_to_hold(loader):
     blade = Blade(loader, frame_hold=1)
     blade.fire("primary")
